@@ -17,15 +17,15 @@
             android:text="+"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:textColor="#ffffff"
-            android:textSize="48sp"
-            android:elevation="6dp"
+            android:textColor="#fff"
+            android:textSize="40sp"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"
             android:layout_marginBottom="16dp"
             android:layout_marginRight="16dp"
             android:background="@drawable/fundo"
 
+            android:elevation="6dp"
             android:stateListAnimator="@null"/>
 
     </RelativeLayout>
