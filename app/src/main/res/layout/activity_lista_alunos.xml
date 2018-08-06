@@ -13,7 +13,7 @@
         </ListView>
 
         <Button
-            android:id="@+id/lista_aluno_novoAluno"
+            android:id="@+id/listaAluno_novoAluno"
             android:text="+"
             android:layout_width="56dp"
             android:layout_height="56dp"
