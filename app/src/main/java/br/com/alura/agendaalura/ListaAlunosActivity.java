@@ -1,9 +1,15 @@
 package br.com.alura.agendaalura;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.view.accessibility.AccessibilityNodeInfoCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -14,6 +20,8 @@ import android.widget.Toast;
 
 import java.util.List;
 
+import br.com.alura.agendaalura.adapter.AlunoAdapter;
+import br.com.alura.agendaalura.converter.AlunoConverter;
 import br.com.alura.agendaalura.dao.AlunoDAO;
 import br.com.alura.agendaalura.modelo.Aluno;
 
@@ -57,13 +65,53 @@ public class ListaAlunosActivity extends AppCompatActivity {
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, final ContextMenu.ContextMenuInfo menuInfo) {
-        MenuItem deletar = menu.add("Deletar");
-        deletar.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        final Aluno aluno = (Aluno) listaAlunos.getItemAtPosition(info.position);
+
+        String site = aluno.getSite();
+        site = site.startsWith("http://") ?  site : "http://" + site;
+        String telefone = aluno.getTelefone();
+
+        MenuItem itemLigar = menu.add("Ligar");
+        MenuItem itemSms = menu.add("Enviar SMS");
+        MenuItem itemSite = menu.add("Visitar site");
+        MenuItem itemAcharNoMapa = menu.add("Visualizar no mapa");
+        MenuItem itemDeletar = menu.add("Deletar");
+
+        Intent intentSite = new Intent(Intent.ACTION_VIEW);
+        intentSite.setData(Uri.parse(site));
+        itemSite.setIntent(intentSite);
+
+        Intent intentSms = new Intent(Intent.ACTION_VIEW);
+        intentSms.setData(Uri.parse("sms:" + telefone));
+        itemSms.setIntent(intentSms);
+
+        Intent intentMapa = new Intent(Intent.ACTION_VIEW);
+        intentMapa.setData(Uri.parse("geo:0,0?z=14&q=" + aluno.getEndereco()));
+        itemAcharNoMapa.setIntent(intentMapa);
+
+        itemLigar.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-                Aluno aluno = (Aluno) listaAlunos.getItemAtPosition(info.position);
-                Toast.makeText(ListaAlunosActivity.this, "Deletar o aluno " + aluno.getNome(), Toast.LENGTH_SHORT).show();
+                if (ActivityCompat.checkSelfPermission(ListaAlunosActivity.this,
+                        Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED){
+
+                    ActivityCompat.requestPermissions(ListaAlunosActivity.this,
+                            new String[]{Manifest.permission.CALL_PHONE}, 123);
+                }else {
+                    Intent intentLigar = new Intent(Intent.ACTION_CALL);
+                    intentLigar.setData(Uri.parse("tel:" + aluno.getTelefone()));
+                    startActivity(intentLigar);
+                }
+                return false;
+            }
+        });
+
+        itemDeletar.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                Toast.makeText(ListaAlunosActivity.this, "Deletando o aluno " + aluno.getNome(), Toast.LENGTH_SHORT).show();
 
                 AlunoDAO dao = new AlunoDAO(ListaAlunosActivity.this);
                 dao.deleta(aluno);
@@ -80,7 +128,26 @@ public class ListaAlunosActivity extends AppCompatActivity {
         List<Aluno> alunos = dao.buscaAlunos();
         dao.close();
 
-        ArrayAdapter<Aluno> adapter = new ArrayAdapter<Aluno>(this, android.R.layout.simple_list_item_1, alunos);
+        AlunoAdapter adapter = new AlunoAdapter(this, alunos);
         listaAlunos.setAdapter(adapter);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_lista_alunos, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Toast.makeText(this, "onOptionsItemSelected", Toast.LENGTH_LONG);
+        switch (item.getItemId()){
+            case R.id.menu_enviar_notas :
+                Toast.makeText(this, "Chamando o EnviaDadosServidor", Toast.LENGTH_LONG);
+                new EnviaDadosServidor(this).execute();
+
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
